@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Irish Building Control & CIRI Code of Practice - Quiz</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .header .subtitle {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .score-bar {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .score-info {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .score-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .score-label {
+            font-size: 0.85em;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .score-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        .quiz-content {
+            padding: 30px;
+        }
+
+        .question-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .question-number {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .question-text {
+            font-size: 1.2em;
+            color: #212529;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .option {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .option:hover:not(.disabled) {
+            border-color: #667eea;
+            background: #f0f3ff;
+            transform: translateX(5px);
+        }
+
+        .option.selected {
+            border-color: #667eea;
+            background: #e7edff;
+        }
+
+        .option.correct {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+
+        .option.incorrect {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .option.disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .option-letter {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .option.correct .option-letter {
+            background: #28a745;
+        }
+
+        .option.incorrect .option-letter {
+            background: #dc3545;
+        }
+
+        .option-text {
+            flex: 1;
+        }
+
+        .feedback {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback.correct {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+
+        .feedback.incorrect {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+
+        .feedback-title {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        .feedback.correct .feedback-title {
+            color: #155724;
+        }
+
+        .feedback.incorrect .feedback-title {
+            color: #721c24;
+        }
+
+        .feedback-text {
+            line-height: 1.6;
+            color: #383d41;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #5a6268;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .start-screen, .end-screen {
+            text-align: center;
+            padding: 60px 30px;
+        }
+
+        .start-screen h2, .end-screen h2 {
+            font-size: 2.5em;
+            color: #1e3c72;
+            margin-bottom: 20px;
+        }
+
+        .start-screen p, .end-screen p {
+            font-size: 1.2em;
+            color: #6c757d;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border: 2px solid #2196F3;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 600px;
+            text-align: left;
+        }
+
+        .info-box h3 {
+            color: #1976D2;
+            margin-bottom: 15px;
+        }
+
+        .info-box ul {
+            line-height: 2;
+            margin-left: 20px;
+        }
+
+        .final-score {
+            font-size: 4em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 30px 0;
+        }
+
+        .performance {
+            font-size: 1.5em;
+            color: #495057;
+            margin-bottom: 30px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 30px 0;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .score-info {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .nav-buttons {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .header p {
+                font-size: 0.95em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏗️ Irish Building Control Quiz</h1>
+            <p>Code of Practice for Inspecting and Certifying Buildings and Works</p>
+            <p class="subtitle">Building Control Regulations 1997-2015 & CIRI Code of Practice</p>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="startScreen" class="start-screen">
+            <h2>Welcome to the Quiz!</h2>
+            <p>Test your knowledge of Irish Building Control regulations and the CIRI Code of Practice.</p>
+            
+            <div class="info-box">
+                <h3>📋 Quiz Information</h3>
+                <ul>
+                    <li><strong>Question Bank:</strong> 100 comprehensive questions</li>
+                    <li><strong>Quiz Length:</strong> 50 questions randomly selected</li>
+                    <li><strong>Randomization:</strong> Different questions each time</li>
+                    <li><strong>Instant Feedback:</strong> After each answer</li>
+                    <li><strong>Detailed Explanations:</strong> Learn as you go</li>
+                    <li><strong>Live Score Tracking:</strong> Monitor your progress</li>
+                </ul>
+            </div>
+
+            <div class="info-box" style="background: #fff3e0; border-color: #FF9800;">
+                <h3>📚 Coverage</h3>
+                <p><strong>Code of Practice for Inspecting and Certifying Buildings and Works:</strong></p>
+                <ul>
+                    <li>Roles and duties (Building Owners, Builders, Designers, Certifiers)</li>
+                    <li>Certification requirements</li>
+                    <li>Inspection plans and procedures</li>
+                    <li>Building Control Authority responsibilities</li>
+                </ul>
+                <p style="margin-top: 15px;"><strong>CIRI Code of Practice:</strong></p>
+                <ul>
+                    <li>General principles and quality customer service</li>
+                    <li>Legal and regulatory compliance</li>
+                    <li>Continuing Professional Development (CPD)</li>
+                </ul>
+            </div>
+
+            <button class="btn btn-primary" onclick="startQuiz()" style="margin-top: 20px; font-size: 1.1em; padding: 15px 40px;">Start Quiz</button>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quizScreen" class="hidden">
+            <div class="score-bar">
+                <div class="score-info">
+                    <div class="score-item">
+                        <span class="score-label">Questions Answered</span>
+                        <span class="score-value" id="answeredCount">0/50</span>
+                    </div>
+                    <div class="score-item">
+                        <span class="score-label">Current Score</span>
+                        <span class="score-value" id="currentScore">0/50</span>
+                    </div>
+                    <div class="score-item">
+                        <span class="score-label">Success Rate</span>
+                        <span class="score-value" id="percentage">0%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+
+            <div class="quiz-content">
+                <div class="question-card">
+                    <div class="question-number" id="questionNumber">Question 1 of 50</div>
+                    <div class="question-text" id="questionText"></div>
+                    <div class="options" id="optionsContainer"></div>
+                    <div class="feedback" id="feedback">
+                        <div class="feedback-title" id="feedbackTitle"></div>
+                        <div class="feedback-text" id="feedbackText"></div>
+                    </div>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" id="prevBtn" onclick="previousQuestion()" disabled>← Previous</button>
+                    <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" disabled>Next →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- End Screen -->
+        <div id="endScreen" class="end-screen hidden">
+            <h2>🎉 Quiz Complete!</h2>
+            <div class="final-score" id="finalScore"></div>
+            <div class="performance" id="performance"></div>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #28a745;" id="correctCount"></div>
+                    <div class="stat-label">Correct</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: #dc3545;" id="incorrectCount"></div>
+                    <div class="stat-label">Incorrect</div>
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="restartQuiz()" style="margin-top: 30px;">Retake Quiz (New Questions)</button>
+        </div>
+    </div>
+
+    <script>
+        // Complete question bank - 100 questions from both documents
+        const questionBank = [
+            // BUILDING CONTROL CODE OF PRACTICE QUESTIONS (50 questions)
+            {
+                question: "What is the primary purpose of the Code of Practice for Inspecting and Certifying Buildings and Works?",
+                options: [
+                    "To provide guidance on building design only",
+                    "To provide guidance with respect to inspecting and certifying works for compliance with the Second Schedule to Building Regulations",
+                    "To replace Building Regulations",
+                    "To provide insurance guidelines"
+                ],
+                correct: 1,
+                explanation: "The Code of Practice is published to provide guidance with respect to inspecting and certifying works or a building for compliance with the requirements of the Second Schedule to the Building Regulations."
+            },
+            {
+                question: "When was the Code of Practice for Inspecting and Certifying Buildings and Works published?",
+                options: ["February 2014", "March 2014", "September 2016", "January 2015"],
+                correct: 2,
+                explanation: "The current Code of Practice was published in September 2016 and replaces the Code of Practice dated February 2014."
+            },
+            {
+                question: "Which Article of the Building Control Regulations references the Code of Practice?",
+                options: ["Article 15", "Article 20G", "Article 6", "Article 12"],
+                correct: 1,
+                explanation: "The Code of Practice is published by the Minister with reference to Article 20G of the Building Control Regulations."
+            },
+            {
+                question: "What does it indicate if works are inspected and certified in accordance with the Code of Practice?",
+                options: [
+                    "Absolute compliance",
+                    "Prima facie indication of compliance with Building Control Regulations",
+                    "No further inspection needed",
+                    "Automatic insurance coverage"
+                ],
+                correct: 1,
+                explanation: "Where works are inspected and certified in accordance with the Code of Practice, this shall, prima facie, indicate compliance with the relevant requirements of the Building Control Regulations."
+            },
+            {
+                question: "Who sets out standards and procedures in the Code of Practice?",
+                options: [
+                    "Only Building Control Authorities",
+                    "Building owners, Designers, Builders, Certifiers, Building Control Authorities, and Building materials manufacturers",
+                    "Only Assigned Certifiers",
+                    "Only Builders and Designers"
+                ],
+                correct: 1,
+                explanation: "The code sets out standards and procedures for Building owners, Designers, Builders, Certifiers, Building Control Authorities, and Building materials and component manufacturers."
+            },
+            {
+                question: "What is the overall objective of the revised building control system?",
+                options: [
+                    "To reduce costs",
+                    "To achieve better building construction",
+                    "To speed up approval processes",
+                    "To eliminate inspections"
+                ],
+                correct: 1,
+                explanation: "The overall objective of the revised building control system is to achieve better building construction by ensuring all involved work effectively."
+            },
+            {
+                question: "When did the revised building control arrangements operate from?",
+                options: ["1 January 2014", "1 March 2014", "1 September 2016", "1 January 2015"],
+                correct: 1,
+                explanation: "Oversight is central to the revised arrangements for the control of building activity that operate from 1 March 2014."
+            },
+            {
+                question: "What approach does the Building Control Authority use for regulatory oversight?",
+                options: [
+                    "Random inspection",
+                    "Risk-based approach",
+                    "Annual review only",
+                    "Complaint-driven approach"
+                ],
+                correct: 1,
+                explanation: "A key aim of the Code is for regulatory oversight to ensure a culture of compliance with Building Regulations using a risk-based approach to target those who are non-compliant."
+            },
+            {
+                question: "What is an 'Assigned Certifier'?",
+                options: [
+                    "Any builder on site",
+                    "The competent, registered professional person assigned to inspect and certify works in accordance with Building Control Regulations",
+                    "A local authority inspector",
+                    "An insurance assessor"
+                ],
+                correct: 1,
+                explanation: "An Assigned Certifier is the competent, registered professional person assigned by the Building Owner to inspect and certify works in accordance with the Building Control Regulations."
+            },
+            {
+                question: "Who is ultimately responsible for ensuring buildings are carried out in accordance with Building Regulations?",
+                options: [
+                    "The Assigned Certifier",
+                    "The Builder",
+                    "The Building Owner",
+                    "The Building Control Authority"
+                ],
+                correct: 2,
+                explanation: "The Building Owner is ultimately responsible for ensuring that buildings or works are carried out in accordance with the requirements of the Building Regulations."
+            },
+            {
+                question: "What must a Building Owner ensure regarding the Assigned Certifier?",
+                options: [
+                    "They are the cheapest option",
+                    "They are a competent, registered professional",
+                    "They are employed by the local authority",
+                    "They live locally"
+                ],
+                correct: 1,
+                explanation: "The Building Owner should ensure they appoint a competent, registered professional to act as the Assigned Certifier."
+            },
+            {
+                question: "What should a Builder do regarding the Commencement Notice?",
+                options: [
+                    "Ignore it",
+                    "Accept the assignment to build and supervise the building or works outlined in it",
+                    "Challenge it",
+                    "Submit it themselves"
+                ],
+                correct: 1,
+                explanation: "The Builder should accept from the Building Owner the assignment to build and supervise the building or works outlined in the Commencement Notice."
+            },
+            {
+                question: "What must a Builder ensure about workmanship?",
+                options: [
+                    "It meets client expectations only",
+                    "It complies with the requirements of the Building Regulations",
+                    "It is completed quickly",
+                    "It uses traditional methods only"
+                ],
+                correct: 1,
+                explanation: "The Builder must ensure that the workmanship complies with the requirements of the Building Regulations."
+            },
+            {
+                question: "Who should Designers provide Ancillary Certificates to?",
+                options: [
+                    "The Building Owner only",
+                    "The Builder only",
+                    "The Assigned Certifier and Design Certifier",
+                    "The insurance company"
+                ],
+                correct: 2,
+                explanation: "Designers should provide the Ancillary Certificates when required by the Assigned Certifier and Design Certifier."
+            },
+            {
+                question: "What is a key role of the Assigned Certifier?",
+                options: [
+                    "To supervise the builder",
+                    "To prepare an Inspection Plan and coordinate inspection activities during construction",
+                    "To design the building",
+                    "To obtain planning permission"
+                ],
+                correct: 1,
+                explanation: "The Assigned Certifier should prepare the Preliminary Inspection Plan, oversee adherence to this plan, and coordinate the inspection activities of others during construction."
+            },
+            {
+                question: "Who acts as the single point of contact with the Building Control Authority during construction?",
+                options: [
+                    "The Builder",
+                    "The Building Owner",
+                    "The Assigned Certifier",
+                    "The Designer"
+                ],
+                correct: 2,
+                explanation: "The Assigned Certifier acts as the single point of contact with the Building Control Authority during construction."
+            },
+            {
+                question: "What should the Assigned Certifier do if disputes arise between parties?",
+                options: [
+                    "Make the final decision themselves",
+                    "Seek advice from the Building Control Authority",
+                    "Stop work immediately",
+                    "Hire a lawyer"
+                ],
+                correct: 1,
+                explanation: "The Assigned Certifier should seek advice from the Building Control Authority in respect of compliance matters relating to the building or works where disputes or differences of opinion arise between the parties to the project."
+            },
+            {
+                question: "What does the Building Control Authority do with Commencement Notices?",
+                options: [
+                    "Reject them automatically",
+                    "Validate and register them",
+                    "Ignore them",
+                    "Forward them to insurance companies"
+                ],
+                correct: 1,
+                explanation: "The Building Control Authority validates and registers Commencement Notices/7 Day Notices and the accompanying Certificates of Compliance (Design)."
+            },
+            {
+                question: "What analysis does the Building Control Authority undertake for each Commencement Notice?",
+                options: [
+                    "Financial analysis",
+                    "Risk analysis",
+                    "Market analysis",
+                    "Environmental analysis"
+                ],
+                correct: 1,
+                explanation: "The Building Control Authority undertakes a risk analysis of each Commencement Notice/7 Day Notice submitted in order to inform its own inspection arrangements."
+            },
+            {
+                question: "Is the Building Control Authority required to carry out a technical assessment of plans submitted?",
+                options: [
+                    "Yes, always required",
+                    "No, there is no requirement or obligation",
+                    "Only for large projects",
+                    "Only if requested"
+                ],
+                correct: 1,
+                explanation: "There is no requirement or obligation on the Building Control Authority to carry out a technical assessment of the plans or other documents submitted, see section 6(4) of the Act of 1990."
+            },
+            {
+                question: "What should Building Control Authorities make available to Assigned Certifiers?",
+                options: [
+                    "Their budget information",
+                    "Their inspection reports on an on-going basis",
+                    "Their staff contact details",
+                    "Their internal procedures"
+                ],
+                correct: 1,
+                explanation: "Where inspections are carried out by Building Control Authorities they should make their inspection reports available to Assigned Certifiers and the Builders on an on-going basis."
+            },
+            {
+                question: "What is an 'Ancillary Certificate'?",
+                options: [
+                    "A statutory certificate",
+                    "A certificate other than a statutory certificate given by a competent person to confirm compliance of elements with Building Regulations",
+                    "A planning certificate",
+                    "An insurance certificate"
+                ],
+                correct: 1,
+                explanation: "An Ancillary Certificate is a certificate other than a statutory certificate of compliance given by a competent person to confirm compliance of elements of the building, design or works with Building Regulations."
+            },
+            {
+                question: "What determines if a person is deemed competent?",
+                options: [
+                    "Their age and experience only",
+                    "Having sufficient training, experience and knowledge appropriate to the nature of the work, taking account of the size/complexity",
+                    "Their professional qualification only",
+                    "Their insurance coverage"
+                ],
+                correct: 1,
+                explanation: "A person is deemed competent where, having regard to the task and taking account of the size and/or complexity of the building or works, they possess sufficient training, experience and knowledge appropriate to the nature of the work."
+            },
+            {
+                question: "What does 'Design Certifier' mean?",
+                options: [
+                    "Anyone who draws plans",
+                    "The competent, registered professional who designs the building/works and certifies design compliance with Building Regulations",
+                    "A building inspector",
+                    "An architect only"
+                ],
+                correct: 1,
+                explanation: "A Design Certifier is the competent, registered professional person who has been commissioned by the Building Owner to design the building or works and to certify such design is in compliance with the Second Schedule to the Building Regulations."
+            },
+            {
+                question: "Under which section of the Act of 1990 is there an obligation that buildings be designed and constructed in accordance with Building Regulations?",
+                options: ["Section 2(5)", "Section 3(5)", "Section 6(2)", "Section 8(1)"],
+                correct: 1,
+                explanation: "There is an obligation under section 3(5) of the Act of 1990 that buildings be designed and constructed in accordance with the relevant requirements of the Building Regulations."
+            },
+            {
+                question: "Who are bound by the legal requirement to design and construct in accordance with Building Regulations?",
+                options: [
+                    "Only Building Owners",
+                    "Building Owners, Designers and Builders",
+                    "Only the Building Control Authority",
+                    "Only Assigned Certifiers"
+                ],
+                correct: 1,
+                explanation: "Building Owners, Designers and Builders are bound by the legal requirement under section 3(5) of the Act of 1990."
+            },
+            {
+                question: "What should the Building Owner do if the Assigned Certifier withdraws from the project?",
+                options: [
+                    "Continue without one",
+                    "Promptly assign a replacement and notify the Building Control Authority",
+                    "Stop the project",
+                    "Take on the role themselves"
+                ],
+                correct: 1,
+                explanation: "Where the Assigned Certifier withdraws, the Building Owner is required to promptly assign a replacement and give notice to the Building Control Authority of the new assignment."
+            },
+            {
+                question: "What is the 'Inspection Notification Framework' (INF)?",
+                options: [
+                    "A system for reporting accidents",
+                    "A framework for notifying key construction stages requiring inspection",
+                    "A financial reporting system",
+                    "A planning notification system"
+                ],
+                correct: 1,
+                explanation: "The Inspection Notification Framework (INF) is a structured framework for identifying and notifying key stages during construction that require inspection."
+            },
+            {
+                question: "What should an Inspection Plan include?",
+                options: [
+                    "Only the final inspection",
+                    "Details of who will inspect, what will be inspected, when, and inspection frequency",
+                    "Only structural inspections",
+                    "Only fire safety inspections"
+                ],
+                correct: 1,
+                explanation: "An Inspection Plan should detail who will carry out inspections, what elements will be inspected, when inspections will occur, and the frequency of inspections."
+            },
+            {
+                question: "Who prepares the Preliminary Inspection Plan?",
+                options: [
+                    "The Builder",
+                    "The Assigned Certifier",
+                    "The Building Control Authority",
+                    "The Building Owner"
+                ],
+                correct: 1,
+                explanation: "The Assigned Certifier prepares the Preliminary Inspection Plan and oversees adherence to this plan."
+            },
+            {
+                question: "What factors should be considered when determining an Inspection Plan?",
+                options: [
+                    "Only the budget",
+                    "Complexity, size, type of construction, ground conditions, and competence of the construction team",
+                    "Only the timeline",
+                    "Only previous experience"
+                ],
+                correct: 1,
+                explanation: "Factors in determining an Inspection Plan include the complexity and size of the project, type of construction, ground conditions, and competence of the construction team."
+            },
+            {
+                question: "What should happen if an inspection reveals non-compliance?",
+                options: [
+                    "Ignore it if minor",
+                    "Follow-up procedures should be implemented",
+                    "Continue and fix at the end",
+                    "Report to insurance only"
+                ],
+                correct: 1,
+                explanation: "If inspections reveal non-compliance, appropriate follow-up procedures should be implemented to address the issues."
+            },
+            {
+                question: "What must be kept regarding inspections?",
+                options: [
+                    "Mental notes only",
+                    "Records of inspection",
+                    "Photographs only",
+                    "No records needed"
+                ],
+                correct: 1,
+                explanation: "Records of inspection must be maintained by the Assigned Certifier, Designers, and Builders."
+            },
+            {
+                question: "What is submitted at the completion stage?",
+                options: [
+                    "Only invoices",
+                    "Certificate of Compliance on Completion and supporting documentation",
+                    "Only photographs",
+                    "Planning certificates"
+                ],
+                correct: 1,
+                explanation: "At completion stage, the Certificate of Compliance on Completion and accompanying documentation are submitted."
+            },
+            {
+                question: "Who validates and registers the Certificate of Compliance on Completion?",
+                options: [
+                    "The Assigned Certifier",
+                    "The Building Control Authority",
+                    "The Builder",
+                    "The insurance company"
+                ],
+                correct: 1,
+                explanation: "The Building Control Authority validates and registers the Certificate of Compliance on Completion and accompanying documentation."
+            },
+            {
+                question: "Can works be completed in phases?",
+                options: [
+                    "No, never allowed",
+                    "Yes, phased completion is provided for",
+                    "Only for industrial buildings",
+                    "Only with special permission"
+                ],
+                correct: 1,
+                explanation: "The regulations provide for phased completion of works where appropriate."
+            },
+            {
+                question: "What type of system is used for e-lodgements?",
+                options: [
+                    "Email system",
+                    "Building Control Management System",
+                    "Postal system",
+                    "Fax system"
+                ],
+                correct: 1,
+                explanation: "E-lodgements are managed through the online Building Control Management System."
+            },
+            {
+                question: "What ethical standards apply to professionals involved?",
+                options: [
+                    "No specific standards",
+                    "Professional ethics standards must be maintained",
+                    "Only company policies",
+                    "Only legal minimums"
+                ],
+                correct: 1,
+                explanation: "The Code requires that professional ethics be maintained by all professionals involved in the building control process."
+            },
+            {
+                question: "What type of insurance is referenced in the Code?",
+                options: [
+                    "Only vehicle insurance",
+                    "Professional indemnity insurance and other appropriate insurances",
+                    "Only public liability",
+                    "No insurance mentioned"
+                ],
+                correct: 1,
+                explanation: "The Code references the need for appropriate insurance, including professional indemnity insurance."
+            },
+            {
+                question: "What must be lodged at the commencement stage?",
+                options: [
+                    "Only a fee",
+                    "Plans, specifications, Commencement Notice, Certificate of Compliance (Design), and undertakings",
+                    "Only drawings",
+                    "Only the contract"
+                ],
+                correct: 1,
+                explanation: "At commencement, plans and specifications, Commencement Notice, Certificate of Compliance (Design), notices of assignment, and undertakings by Assigned Certifier and Builder must be lodged."
+            },
+            {
+                question: "Can the Assigned Certifier also be the Design Certifier?",
+                options: [
+                    "No, never allowed",
+                    "Yes, the same person may fulfill both roles",
+                    "Only for small projects",
+                    "Only with special permission"
+                ],
+                correct: 1,
+                explanation: "The Code recognizes that the Assigned Certifier may or may not be a member of the design team, indicating they can be the same person."
+            },
+            {
+                question: "What should happen if there is a change of Building Owner before completion?",
+                options: [
+                    "Stop the project",
+                    "The new Building Owner must give notice of the change and notify all appointments in place",
+                    "Continue without notification",
+                    "Start the process again"
+                ],
+                correct: 1,
+                explanation: "Where there is a change of Building Owner prior to submission of the Certificate of Compliance on Completion, the new Building Owner is required to give notice of the change and notify all appointments in place."
+            },
+            {
+                question: "Who must sign the Certificate of Compliance on Completion?",
+                options: [
+                    "Only the Assigned Certifier",
+                    "Both the Assigned Certifier and the Builder",
+                    "Only the Builder",
+                    "Only the Building Owner"
+                ],
+                correct: 1,
+                explanation: "Both the Assigned Certifier and the Builder must sign the Certificate of Compliance on Completion."
+            },
+            {
+                question: "What does the Builder provide to assist the Assigned Certifier?",
+                options: [
+                    "Nothing required",
+                    "Documents, test certificates and confirmations for which they are responsible",
+                    "Only labor schedules",
+                    "Only material receipts"
+                ],
+                correct: 1,
+                explanation: "The Builder provides to the Assigned Certifier such documents for which they are responsible, as may assist for handover and certification purposes."
+            },
+            {
+                question: "Should Designers carry out work inspections?",
+                options: [
+                    "No, never required",
+                    "Yes, as agreed with the Assigned Certifier, for elements pertinent to their design",
+                    "Only if paid extra",
+                    "Only at completion"
+                ],
+                correct: 1,
+                explanation: "Designers should, as agreed with the Assigned Certifier, carry out work inspections which are pertinent to their elements of the Design."
+            },
+            {
+                question: "What should the Builder do regarding test certificates?",
+                options: [
+                    "Ignore them",
+                    "Ensure the coordination and provision of all test certificates to the satisfaction of the Assigned Certifier",
+                    "Keep them confidential",
+                    "Only provide if asked"
+                ],
+                correct: 1,
+                explanation: "The Builder should ensure the coordination and provision of all test certificates and confirmations to the satisfaction of the Assigned Certifier."
+            },
+            {
+                question: "What is the status of guidance regarding inspection frameworks in the Code?",
+                options: [
+                    "Mandatory in all cases",
+                    "Will not be construed as prohibiting the use of other suitable frameworks or approaches",
+                    "Optional for all",
+                    "Only for large projects"
+                ],
+                correct: 1,
+                explanation: "The provisions of any guidance concerning the use of a particular inspection framework or approach will not be construed as prohibiting the use of other suitable frameworks or approaches."
+            },
+            {
+                question: "Which regulation gave owners of single dwellings the facility to opt out of statutory certification?",
+                options: [
+                    "Building Control Regulations 2014",
+                    "Building Control (Amendment) (No. 2) Regulations 2015 (S.I. No. 365 of 2015)",
+                    "Building Regulations 1997",
+                    "Building Control Act 2007"
+                ],
+                correct: 1,
+                explanation: "The Building Control (Amendment) (No. 2) Regulations 2015 (S.I. No. 365 of 2015) give owners of new single dwellings or domestic extensions the facility to opt out of statutory certification requirements."
+            },
+            {
+                question: "When an owner opts out of statutory certification, does this Code of Practice apply?",
+                options: [
+                    "Yes, always applies",
+                    "No, this Code of Practice does not apply in such circumstances",
+                    "Only partially applies",
+                    "Applies only to inspections"
+                ],
+                correct: 1,
+                explanation: "When an owner opts out of statutory certification for a new single dwelling or domestic extension, this Code of Practice does not apply in such circumstances."
+            },
+            {
+                question: "What regulatory design principle encourages third parties to positively influence compliance?",
+                options: [
+                    "Principle 1",
+                    "Principle 4",
+                    "Principle 2",
+                    "Principle 5"
+                ],
+                correct: 1,
+                explanation: "Principle 4 of the regulatory design principles is about empowering third parties (both commercial and non-commercial) to positively influence compliance with regulatory requirements."
+            },
+
+            // CIRI CODE OF PRACTICE QUESTIONS (50 questions)
+            {
+                question: "What is CIRI an abbreviation for?",
+                options: [
+                    "Construction Industry Register Ireland",
+                    "Construction Inspection and Regulatory Institute",
+                    "Certified Irish Registered Institute",
+                    "Construction Industry Regulatory Ireland"
+                ],
+                correct: 0,
+                explanation: "CIRI stands for Construction Industry Register Ireland, which is the statutory register for providers of building works in Ireland."
+            },
+            {
+                question: "In what year was the Regulation of Providers of Building Works and Miscellaneous Provisions Act enacted?",
+                options: ["2020", "2021", "2022", "2023"],
+                correct: 2,
+                explanation: "The Act was enacted in 2022, making it mandatory for all providers of building works to comply with its requirements."
+            },
+            {
+                question: "Who can legally display the CIRI logo and branding?",
+                options: [
+                    "Any construction company",
+                    "Only CIRI registrants",
+                    "All Irish builders",
+                    "Companies with insurance"
+                ],
+                correct: 1,
+                explanation: "Only CIRI registrants, as providers of building works, can display the CIRI logo and branding."
+            },
+            {
+                question: "What are building works defined as in the CIRI context?",
+                options: [
+                    "Only new construction projects",
+                    "Construction and extension only",
+                    "Any act or operation in connection with construction, extension, alteration, repair or renewal of a building",
+                    "Major structural works only"
+                ],
+                correct: 2,
+                explanation: "Building works are defined comprehensively as any act or operation in connection with the construction, extension, alteration, repair or renewal of a building."
+            },
+            {
+                question: "Can CIRI registrants advertise services for divisions they are not registered in?",
+                options: [
+                    "Yes, if they plan to register soon",
+                    "Yes, with a disclaimer",
+                    "No, it is not legally permitted",
+                    "Only for promotional purposes"
+                ],
+                correct: 2,
+                explanation: "Registrants cannot legally advertise or promote their services for a particular division or sub-division of the register unless they are registered in that division or sub-division."
+            },
+            {
+                question: "Who can file a complaint about a CIRI registrant?",
+                options: [
+                    "Only other registrants",
+                    "Only government officials",
+                    "Any person or entity",
+                    "Only clients of the registrant"
+                ],
+                correct: 2,
+                explanation: "Any person or entity can file a complaint to the register about a registrant on the grounds of failure to comply with the code."
+            },
+            {
+                question: "According to the CIRI General Principles, registrants must comply with which of the following?",
+                options: [
+                    "The code only",
+                    "The 2022 Act only",
+                    "Both the code and the 2022 Act",
+                    "Industry best practices only"
+                ],
+                correct: 2,
+                explanation: "Registrants must ensure compliance with both this code and the 2022 Act as stated in the General Principles."
+            },
+            {
+                question: "What type of responsibilities of building should CIRI registrants adhere to?",
+                options: [
+                    "Economic only",
+                    "Environmental only",
+                    "Economic, social, and environmental",
+                    "Social and environmental only"
+                ],
+                correct: 2,
+                explanation: "Registrants must adhere to the economic, social, and environmental responsibilities of building."
+            },
+            {
+                question: "Is it acceptable for a CIRI registrant to knowingly accept an inducement that could be construed as a bribe?",
+                options: [
+                    "Yes, if it's industry standard",
+                    "Yes, if declared",
+                    "No, it is prohibited",
+                    "Only in certain circumstances"
+                ],
+                correct: 2,
+                explanation: "The code explicitly states that registrants must not knowingly accept any inducement that could be construed as a bribe."
+            },
+            {
+                question: "Can a CIRI registrant make false or misleading statements about another firm?",
+                options: [
+                    "Yes, if competitive advantage is needed",
+                    "No, this is prohibited",
+                    "Yes, if the statement is true",
+                    "Only in marketing materials"
+                ],
+                correct: 1,
+                explanation: "Registrants must not make any false or misleading statement about another firm or professional."
+            },
+            {
+                question: "What must CIRI registrants examine before submitting quotations?",
+                options: [
+                    "Only the budget",
+                    "Plans, specifications and other information provided",
+                    "Previous project examples only",
+                    "Client references only"
+                ],
+                correct: 1,
+                explanation: "Registrants must examine the plans, specifications and other information provided prior to developing a response to a tender request or submitting quotations."
+            },
+            {
+                question: "When standard forms of contract are not in use, what should CIRI quotations include?",
+                options: [
+                    "Price only",
+                    "Scope of work only",
+                    "Scope of work, scales of charges and payment terms",
+                    "Timeline only"
+                ],
+                correct: 2,
+                explanation: "Where standard forms of contract and tendering procedures are not in use, registrants should submit written quotations setting out the scope of work, scales of charges and payment terms."
+            },
+            {
+                question: "Who must CIRI registrants co-operate with during building works?",
+                options: [
+                    "Only the client",
+                    "Design teams, assigned certifiers and other appointed certifiers",
+                    "Only the assigned certifier",
+                    "Only subcontractors"
+                ],
+                correct: 1,
+                explanation: "Registrants must co-operate with design teams, assigned certifiers and other appointed certifiers."
+            },
+            {
+                question: "What type of person(s) should CIRI registrants appoint to supervise building works?",
+                options: [
+                    "Any available staff",
+                    "Named competent person(s)",
+                    "External consultants only",
+                    "Junior staff members"
+                ],
+                correct: 1,
+                explanation: "Registrants must appoint named competent person(s) to supervise and oversee building works."
+            },
+            {
+                question: "How should building works be undertaken according to the CIRI code?",
+                options: [
+                    "According to industry norms only",
+                    "In accordance with plans, specifications, scope of works and contracts, in compliance with building regulations",
+                    "Based on contractor's experience only",
+                    "According to client preferences only"
+                ],
+                correct: 1,
+                explanation: "Registrants must undertake high-quality building works in accordance with the plans, specifications, scope of works and contracts, in compliance with building regulations."
+            },
+            {
+                question: "What standard should workmanship comply with according to CIRI?",
+                options: [
+                    "Industry best practices",
+                    "Client expectations",
+                    "All requirements of the building regulations",
+                    "Contractor's own standards"
+                ],
+                correct: 2,
+                explanation: "Workmanship should comply with all requirements of the building regulations."
+            },
+            {
+                question: "What should CIRI registrants ensure about materials they select?",
+                options: [
+                    "They are the cheapest available",
+                    "They comply with building regulations",
+                    "They are from local suppliers",
+                    "They are from well-known brands"
+                ],
+                correct: 1,
+                explanation: "Registrants must ensure as far as possible that all materials selected, and that the provider has responsibility for, comply with building regulations."
+            },
+            {
+                question: "Where should materials used come from, as far as is practical according to CIRI?",
+                options: [
+                    "The cheapest source",
+                    "Local suppliers only",
+                    "Legal and ethical sources",
+                    "International markets"
+                ],
+                correct: 2,
+                explanation: "In so far as is practical, registrants should ensure that materials used come from legal and ethical sources."
+            },
+            {
+                question: "How should materials be used according to CIRI guidelines?",
+                options: [
+                    "Based on contractor experience",
+                    "In accordance with manufacturers' recommendations",
+                    "According to cost considerations",
+                    "Based on client preferences"
+                ],
+                correct: 1,
+                explanation: "Registrants must use all materials in accordance with manufacturers' recommendations."
+            },
+            {
+                question: "What must CIRI registrants provide on completion of building projects?",
+                options: [
+                    "Invoice only",
+                    "Warranty documents",
+                    "Mandatory certificates of compliance",
+                    "Project photos"
+                ],
+                correct: 2,
+                explanation: "Registrants must provide mandatory certificates of compliance on completion of building projects."
+            },
+            {
+                question: "What type of policy must CIRI registrants publish and review regularly?",
+                options: [
+                    "Environmental policy",
+                    "Safety policy",
+                    "Internal complaints handling policy",
+                    "Quality assurance policy"
+                ],
+                correct: 2,
+                explanation: "Registrants must publish an internal complaints handling policy and review it regularly."
+            },
+            {
+                question: "What must CIRI registrants inform the register about?",
+                options: [
+                    "All business activities",
+                    "Any convictions for breaches of building regulations and other related legislation",
+                    "Financial status only",
+                    "Employee changes"
+                ],
+                correct: 1,
+                explanation: "Registrants must inform the register of any convictions for breaches of the building regulations and other related legislation."
+            },
+            {
+                question: "What should CIRI registrants use when possible for contracts?",
+                options: [
+                    "Custom contracts only",
+                    "Standard suites of agreed forms of contract",
+                    "Verbal agreements",
+                    "Simple letter agreements"
+                ],
+                correct: 1,
+                explanation: "Where possible, registrants should use standard suites of agreed forms of contract."
+            },
+            {
+                question: "What types of insurance must CIRI registrants maintain?",
+                options: [
+                    "Vehicle insurance only",
+                    "Adequate indemnity and other insurances",
+                    "Public liability only",
+                    "Building insurance only"
+                ],
+                correct: 1,
+                explanation: "Registrants must maintain adequate indemnity and other insurances."
+            },
+            {
+                question: "What tax-related documentation must CIRI registrants maintain?",
+                options: [
+                    "Annual returns only",
+                    "Appropriate tax clearances",
+                    "VAT registration only",
+                    "Income tax statements"
+                ],
+                correct: 1,
+                explanation: "Registrants must maintain appropriate tax clearances."
+            },
+            {
+                question: "How should CIRI registrants handle conflicts of interest?",
+                options: [
+                    "Ignore them if minor",
+                    "Avoid situations which may give rise to a conflict of interest and publicly declare any potential conflict",
+                    "Keep them confidential",
+                    "Disclose only if asked"
+                ],
+                correct: 1,
+                explanation: "Registrants must avoid situations which may give rise to a conflict of interest and publicly declare any potential conflict to relevant parties as appropriate."
+            },
+            {
+                question: "What must CIRI registrants adhere to regarding workplace safety?",
+                options: [
+                    "Company policy only",
+                    "Industry guidelines",
+                    "Safe working practices in accordance with legislation",
+                    "Client requirements only"
+                ],
+                correct: 2,
+                explanation: "Registrants must adhere to safe working practices in accordance with legislation."
+            },
+            {
+                question: "Can CIRI registrants participate in trading of illegally sourced materials?",
+                options: [
+                    "Yes, if unaware of the source",
+                    "No, this is prohibited",
+                    "Yes, if the price is competitive",
+                    "Only for certain materials"
+                ],
+                correct: 1,
+                explanation: "Registrants must not participate in trading of illegally sourced materials."
+            },
+            {
+                question: "Is it acceptable for CIRI registrants to fabricate or falsify information or documentation?",
+                options: [
+                    "Yes, in emergency situations",
+                    "No, this is strictly prohibited",
+                    "Yes, if it benefits the client",
+                    "Only for minor details"
+                ],
+                correct: 1,
+                explanation: "Registrants must not fabricate or falsify information or documentation under any circumstances."
+            },
+            {
+                question: "What statutory records must CIRI registrants keep up to date?",
+                options: [
+                    "Financial records only",
+                    "All statutory records required for legislative purposes",
+                    "Employee records only",
+                    "Project files only"
+                ],
+                correct: 1,
+                explanation: "Registrants must keep up to date all statutory records required for legislative purposes."
+            },
+            {
+                question: "What policy must CIRI registrants adhere to regarding professional development?",
+                options: [
+                    "Industry training programs",
+                    "Company training policy",
+                    "The register's Continuing Professional Development (CPD) policy",
+                    "Optional development courses"
+                ],
+                correct: 2,
+                explanation: "Registrants must adhere to the register's Continuing Professional Development (CPD) policy."
+            },
+            {
+                question: "What should CIRI registrants keep abreast of updates in?",
+                options: [
+                    "Technology only",
+                    "Market trends only",
+                    "Relevant building guidance, regulations and legislative requirements",
+                    "Competitor activities"
+                ],
+                correct: 2,
+                explanation: "Registrants must have competence in, and keep abreast of updates in, relevant building guidance, regulations and legislative requirements."
+            },
+            {
+                question: "What level of competence should CIRI registrants have before undertaking building works?",
+                options: [
+                    "Basic understanding",
+                    "Competence to build and supervise",
+                    "Theoretical knowledge only",
+                    "On-the-job learning capability"
+                ],
+                correct: 1,
+                explanation: "Registrants should only undertake building works with competence to build and supervise."
+            },
+            {
+                question: "What must all workers, including sub-contractors, on a project be according to CIRI?",
+                options: [
+                    "Locally sourced",
+                    "Competent and have appropriate training, experience and skills",
+                    "Insured only",
+                    "Registered with unions"
+                ],
+                correct: 1,
+                explanation: "All workers, including sub-contractors, on a project must be competent and have appropriate training, experience and skills to undertake their work."
+            },
+            {
+                question: "What must CIRI registrants do if a named competent person becomes incapacitated?",
+                options: [
+                    "Pause the project",
+                    "Continue without replacement",
+                    "Arrange for another suitably competent person and inform the register",
+                    "Complete the project themselves"
+                ],
+                correct: 2,
+                explanation: "In the event of the incapacity of a named competent person, registrants must arrange for another suitably competent person to carry out contracted work and inform the register."
+            },
+            {
+                question: "What regulations apply to building works that CIRI registration covers?",
+                options: [
+                    "Only Building Regulations",
+                    "Building Regulations and Building Control Regulations",
+                    "Construction Industry Regulations only",
+                    "Local authority regulations"
+                ],
+                correct: 1,
+                explanation: "CIRI registration is required for building works to which the Building Regulations and Building Control Regulations apply."
+            },
+            {
+                question: "What type of register is CIRI described as?",
+                options: [
+                    "Voluntary professional register",
+                    "Industry association database",
+                    "Online register of competent builders, contractors, specialist sub-contractors and tradespersons",
+                    "Government employee list"
+                ],
+                correct: 2,
+                explanation: "CIRI is an online register of competent builders, contractors, specialist sub-contractors and tradespersons."
+            },
+            {
+                question: "What principles should CIRI registrants advocate for?",
+                options: [
+                    "Cost reduction",
+                    "Faster construction",
+                    "High-quality building practice",
+                    "Maximum profit"
+                ],
+                correct: 2,
+                explanation: "Registrants must advocate for the principles of high-quality building practice."
+            },
+            {
+                question: "How should CIRI registrants conduct all business?",
+                options: [
+                    "Competitively",
+                    "In an honest, ethical, and fair manner",
+                    "Profitably",
+                    "Efficiently"
+                ],
+                correct: 1,
+                explanation: "Registrants must conduct all business in an honest, ethical, and fair manner."
+            },
+            {
+                question: "What should CIRI registrants do with legitimate concerns about work undertaken?",
+                options: [
+                    "Ignore if minor",
+                    "Respect and address them",
+                    "Delegate to others",
+                    "Document only"
+                ],
+                correct: 1,
+                explanation: "Registrants must respect and address legitimate concerns of work undertaken."
+            },
+            {
+                question: "Can a CIRI registrant claim another's work as their own?",
+                options: [
+                    "Yes, if they managed it",
+                    "Yes, if part of a team",
+                    "No, this is prohibited",
+                    "Only in portfolio presentations"
+                ],
+                correct: 2,
+                explanation: "Registrants must not commit fraud or deceit, or claim another's work as the provider's own."
+            },
+            {
+                question: "What expertise should CIRI registrants employ to facilitate contract progression?",
+                options: [
+                    "Legal expertise",
+                    "Financial expertise",
+                    "Management expertise",
+                    "Technical expertise only"
+                ],
+                correct: 2,
+                explanation: "Registrants must employ management expertise to facilitate satisfactory progression of contracts."
+            },
+            {
+                question: "Which environmental legislation is mentioned in the CIRI code?",
+                options: [
+                    "Only the Environmental Protection Agency Act 1992",
+                    "Environmental Protection Agency Act 1992 and Protection of the Environment Act 2003",
+                    "Climate Action legislation only",
+                    "EU Environmental Directives only"
+                ],
+                correct: 1,
+                explanation: "The code references both the Environmental Protection Agency Act 1992 and the Protection of the Environment Act 2003."
+            },
+            {
+                question: "What waste management acts are referenced in the CIRI code?",
+                options: [
+                    "Waste Management Act 1996 only",
+                    "EU regulations only",
+                    "Waste Management Act 1996 and European Communities (Waste Directive) Regulations 2011 and 2020",
+                    "Local authority bylaws"
+                ],
+                correct: 2,
+                explanation: "The code references the Waste Management Act 1996, European Communities (Waste Directive) Regulations 2011, and European Communities (Waste Directive) Regulations 2020."
+            },
+            {
+                question: "What should CIRI quotations set out when standard forms of contract are not used?",
+                options: [
+                    "Price breakdown only",
+                    "Timeline only",
+                    "Scope of work, scales of charges and payment terms",
+                    "Material specifications only"
+                ],
+                correct: 2,
+                explanation: "Quotations should set out the scope of work, scales of charges and payment terms when standard forms are not in use."
+            },
+            {
+                question: "What should CIRI registrants be able to do regarding building techniques?",
+                options: [
+                    "Observe only",
+                    "Specify or arrange to undertake appropriate building techniques",
+                    "Recommend to others",
+                    "Research alternatives"
+                ],
+                correct: 1,
+                explanation: "Registrants should be able to specify, or arrange to undertake, appropriate building techniques."
+            },
+            {
+                question: "When should CIRI registrants exercise competency in determining designs and diagnoses?",
+                options: [
+                    "Always",
+                    "Never, that's the architect's role",
+                    "Where appropriate",
+                    "Only when specifically requested"
+                ],
+                correct: 2,
+                explanation: "Where appropriate, registrants should exercise competency in determining designs, making diagnoses, exploring alternatives and specifying interventions to justify courses of action."
+            },
+            {
+                question: "What type of legislation includes equal status legislation that CIRI registrants must adhere to?",
+                options: [
+                    "Labor law",
+                    "Relevant legislation including employment law",
+                    "Construction-specific law only",
+                    "EU directives only"
+                ],
+                correct: 1,
+                explanation: "Registrants must adhere to requirements of all relevant legislation including employment law and equal status legislation."
+            },
+            {
+                question: "What is the formal name of the document that sets out obligations for CIRI registrants?",
+                options: [
+                    "CIRI Guidelines",
+                    "Code of Practice",
+                    "Registrant Manual",
+                    "Building Standards Document"
+                ],
+                correct: 1,
+                explanation: "The document is referred to as the 'Code of Practice' which sets out the obligations that all providers of building works must comply with as a CIRI registrant."
+            },
+            {
+                question: "What should contracted work be undertaken according to (CIRI)?",
+                options: [
+                    "Best judgment only",
+                    "Its terms, conditions, specification and method statements",
+                    "Industry norms",
+                    "Previous project standards"
+                ],
+                correct: 1,
+                explanation: "Contracted work should be undertaken according to its terms, conditions, specification and method statements, utilizing appropriate building, craft and labour skills."
+            }
+        ];
+
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let answeredQuestions = 0;
+        let userAnswers = [];
+
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        function startQuiz() {
+            // Shuffle the entire question bank and select 50 questions
+            const shuffled = shuffleArray(questionBank);
+            currentQuestions = shuffled.slice(0, 50);
+            
+            currentQuestionIndex = 0;
+            score = 0;
+            answeredQuestions = 0;
+            userAnswers = new Array(currentQuestions.length).fill(null);
+
+            // Show quiz screen
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('quizScreen').classList.remove('hidden');
+            document.getElementById('endScreen').classList.add('hidden');
+
+            // Initialize score display
+            updateScore();
+            
+            displayQuestion();
+        }
+
+        function displayQuestion() {
+            const question = currentQuestions[currentQuestionIndex];
+            
+            document.getElementById('questionNumber').textContent = 
+                `Question ${currentQuestionIndex + 1} of ${currentQuestions.length}`;
+            document.getElementById('questionText').textContent = question.question;
+
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+
+            const letters = ['A', 'B', 'C', 'D'];
+            question.options.forEach((option, index) => {
+                const optionDiv = document.createElement('div');
+                optionDiv.className = 'option';
+                optionDiv.onclick = () => selectAnswer(index);
+                
+                // Check if this question was already answered
+                if (userAnswers[currentQuestionIndex] !== null) {
+                    optionDiv.classList.add('disabled');
+                    if (index === question.correct) {
+                        optionDiv.classList.add('correct');
+                    }
+                    if (index === userAnswers[currentQuestionIndex] && index !== question.correct) {
+                        optionDiv.classList.add('incorrect');
+                    }
+                }
+
+                optionDiv.innerHTML = `
+                    <div class="option-letter">${letters[index]}</div>
+                    <div class="option-text">${option}</div>
+                `;
+                
+                optionsContainer.appendChild(optionDiv);
+            });
+
+            // Show feedback if already answered
+            const feedbackDiv = document.getElementById('feedback');
+            if (userAnswers[currentQuestionIndex] !== null) {
+                showFeedback(userAnswers[currentQuestionIndex] === question.correct, question.explanation);
+            } else {
+                feedbackDiv.classList.remove('show');
+            }
+
+            updateNavigation();
+            updateProgress();
+        }
+
+        function selectAnswer(selectedIndex) {
+            // Prevent answering if already answered
+            if (userAnswers[currentQuestionIndex] !== null) {
+                return;
+            }
+
+            const question = currentQuestions[currentQuestionIndex];
+            userAnswers[currentQuestionIndex] = selectedIndex;
+            
+            const isCorrect = selectedIndex === question.correct;
+            
+            if (isCorrect) {
+                score++;
+            }
+            answeredQuestions++;
+
+            // Update UI
+            const options = document.querySelectorAll('.option');
+            options.forEach((option, index) => {
+                option.classList.add('disabled');
+                if (index === question.correct) {
+                    option.classList.add('correct');
+                }
+                if (index === selectedIndex && !isCorrect) {
+                    option.classList.add('incorrect');
+                }
+            });
+
+            showFeedback(isCorrect, question.explanation);
+            updateScore();
+            updateNavigation();
+        }
+
+        function showFeedback(isCorrect, explanation) {
+            const feedbackDiv = document.getElementById('feedback');
+            const feedbackTitle = document.getElementById('feedbackTitle');
+            const feedbackText = document.getElementById('feedbackText');
+
+            feedbackDiv.classList.remove('correct', 'incorrect');
+            feedbackDiv.classList.add(isCorrect ? 'correct' : 'incorrect');
+            
+            feedbackTitle.textContent = isCorrect ? '✓ Correct!' : '✗ Incorrect';
+            feedbackText.textContent = explanation;
+            
+            feedbackDiv.classList.add('show');
+        }
+
+        function updateScore() {
+            const percentage = answeredQuestions > 0 ? Math.round((score / answeredQuestions) * 100) : 0;
+            document.getElementById('answeredCount').textContent = `${answeredQuestions}/${currentQuestions.length}`;
+            document.getElementById('currentScore').textContent = `${score}/${currentQuestions.length}`;
+            document.getElementById('percentage').textContent = `${percentage}%`;
+        }
+
+        function updateProgress() {
+            const progress = ((currentQuestionIndex + 1) / currentQuestions.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        function updateNavigation() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+
+            prevBtn.disabled = currentQuestionIndex === 0;
+            
+            if (currentQuestionIndex === currentQuestions.length - 1) {
+                nextBtn.textContent = 'Finish Quiz';
+                nextBtn.disabled = userAnswers[currentQuestionIndex] === null;
+            } else {
+                nextBtn.textContent = 'Next →';
+                nextBtn.disabled = userAnswers[currentQuestionIndex] === null;
+            }
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < currentQuestions.length - 1) {
+                currentQuestionIndex++;
+                displayQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function previousQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                displayQuestion();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quizScreen').classList.add('hidden');
+            document.getElementById('endScreen').classList.remove('hidden');
+
+            const percentage = Math.round((score / currentQuestions.length) * 100);
+            document.getElementById('finalScore').textContent = `${percentage}%`;
+            document.getElementById('correctCount').textContent = score;
+            document.getElementById('incorrectCount').textContent = currentQuestions.length - score;
+
+            let performance = '';
+            if (percentage >= 90) {
+                performance = '🌟 Outstanding! Excellent knowledge of Irish Building Control regulations!';
+            } else if (percentage >= 75) {
+                performance = '👏 Great job! Strong understanding demonstrated!';
+            } else if (percentage >= 60) {
+                performance = '👍 Good effort! Consider reviewing the areas you missed.';
+            } else {
+                performance = '📚 Keep studying! Review the Code of Practice documents and try again.';
+            }
+            
+            document.getElementById('performance').textContent = performance;
+        }
+
+        function restartQuiz() {
+            startQuiz();
+        }
+    </script>
+</body>
+</html>
