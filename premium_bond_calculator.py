@@ -165,23 +165,40 @@ def _ask_int(prompt, minimum=None, maximum=None):
         return value
 
 
+def _ask_yes_no(prompt):
+    while True:
+        raw = input(prompt).strip().lower()
+        if raw in ("y", "yes"):
+            return True
+        if raw in ("n", "no"):
+            return False
+        print("Please answer yes or no.")
+
+
 def main():
     print("UK Premium Bond Draw Simulator")
     print("==============================")
     print("Odds: 1 in {:,} per GBP1 bond per month".format(ODDS_DENOM))
     print("Holding cap: GBP{:,}".format(MAX_HOLDING))
 
-    bonds = _ask_int(
-        "How many bonds do you hold? (GBP1 each, 25-50000): ",
-        minimum=25,
-        maximum=MAX_HOLDING,
-    )
-    months = _ask_int(
-        "How many monthly draws to simulate? ",
-        minimum=1,
-    )
+    while True:
+        bonds = _ask_int(
+            "How many bonds do you hold? (GBP1 each, 25-50000): ",
+            minimum=25,
+            maximum=MAX_HOLDING,
+        )
+        months = _ask_int(
+            "How many monthly draws to simulate? ",
+            minimum=1,
+        )
 
-    simulate(bonds, months)
+        simulate(bonds, months)
+
+        print("")
+        if not _ask_yes_no("Run another simulation? (y/n): "):
+            print("Goodbye.")
+            break
+        print("")
 
 
 if __name__ == "__main__":
