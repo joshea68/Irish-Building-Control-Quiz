@@ -10,6 +10,7 @@ the GBP50,000 holding cap; anything above the cap is treated as
 
 import random
 import math
+from collections import deque
 
 # --- UK Premium Bond parameters -------------------------------------------
 
@@ -82,53 +83,82 @@ def sample_winners(num_bonds, prob):
 
 # --- Simulation -----------------------------------------------------------
 
-def simulate(starting_bonds, months, verbose=True):
-    bonds = min(starting_bonds, MAX_HOLDING)
-    overflow = 0          # winnings that couldn't fit under the cap
+def simulate(starting_bonds, months, monthly_buy=0, verbose=True):
+    # Bonds bought this month aren't eligible until the draw two months
+    # later (NS&I rule: a full clear calendar month must pass). We model
+    # this with a two-slot pipeline: pending[0] = bought last month
+    # (eligible next month), pending[1] = bought this month.
+    active = min(starting_bonds, MAX_HOLDING)
+    pending = deque([0, 0])
+    overflow = 0
     total_winnings = 0
-    big_wins = []         # remember prizes of GBP1,000+
+    total_bought = 0
+    big_wins = []
 
     prob = 1.0 / ODDS_DENOM
 
     if verbose:
         print("")
-        print("Starting holding: GBP{:,}".format(bonds))
+        print("Starting holding:    GBP{:,}".format(active))
+        print("Monthly purchase:    GBP{:,}".format(monthly_buy))
         print("Simulating {} monthly draws".format(months))
-        print("-" * 56)
+        print("-" * 70)
 
     for month in range(1, months + 1):
-        winners = sample_winners(bonds, prob)
+        # 1. Graduate the oldest pending tranche into the active pool.
+        graduating = pending.popleft()
+        active += graduating
+
+        # 2. Run this month's draw on the active bonds.
+        winners = sample_winners(active, prob)
         month_win = 0
         for _ in range(winners):
             value = draw_prize_value()
             month_win += value
             if value >= 1000:
                 big_wins.append((month, value))
-
         total_winnings += month_win
 
-        # Reinvest up to the cap, push the rest to "elsewhere".
-        room = MAX_HOLDING - bonds
+        # 3. Reinvest winnings straight into active (existing behaviour),
+        #    constrained by the GBP50,000 cap on total bond holding.
+        held = active + sum(pending)
+        room = MAX_HOLDING - held
         if month_win <= room:
-            bonds += month_win
-            spilled = 0
+            active += month_win
         else:
-            bonds = MAX_HOLDING
-            spilled = month_win - room
-            overflow += spilled
+            if room > 0:
+                active += room
+            overflow += month_win - max(0, room)
 
-        if verbose and month_win > 0:
+        # 4. Buy this month's contribution into the pending pipeline,
+        #    also constrained by the cap. Anything that can't fit goes
+        #    "elsewhere".
+        held = active + sum(pending)
+        room = max(0, MAX_HOLDING - held)
+        bought = min(monthly_buy, room)
+        overflow += monthly_buy - bought
+        total_bought += bought
+        pending.append(bought)
+
+        if verbose and (month_win > 0 or bought > 0):
             print(
-                "Month {:>3}: won GBP{:>7,}  bonds GBP{:>6,}  "
-                "elsewhere GBP{:,}".format(month, month_win, bonds, overflow)
+                "M{:>3}: won GBP{:>7,}  bought GBP{:>5,}  "
+                "active GBP{:>6,}  pending GBP{:>5,}  "
+                "else GBP{:,}".format(
+                    month, month_win, bought, active, sum(pending), overflow
+                )
             )
 
+    final_total = active + sum(pending)
     if verbose:
-        print("-" * 56)
-        print("Final bond holding:        GBP{:,}".format(bonds))
-        print("Invested elsewhere:        GBP{:,}".format(overflow))
-        print("Total winnings over period: GBP{:,}".format(total_winnings))
-        print("Total pot (bonds + else):  GBP{:,}".format(bonds + overflow))
+        print("-" * 70)
+        print("Final active bonds:         GBP{:,}".format(active))
+        print("Pending (not yet eligible): GBP{:,}".format(sum(pending)))
+        print("Total bond holding:         GBP{:,}".format(final_total))
+        print("Total bought from monthly:  GBP{:,}".format(total_bought))
+        print("Invested elsewhere:         GBP{:,}".format(overflow))
+        print("Total winnings:             GBP{:,}".format(total_winnings))
+        print("Grand total (bonds + else): GBP{:,}".format(final_total + overflow))
         if big_wins:
             print("")
             print("Notable wins (GBP1,000+):")
@@ -139,9 +169,12 @@ def simulate(starting_bonds, months, verbose=True):
             print("No prizes of GBP1,000 or more in this run.")
 
     return {
-        "final_bonds": bonds,
+        "final_active": active,
+        "final_pending": sum(pending),
+        "final_total_bonds": final_total,
         "overflow": overflow,
         "total_winnings": total_winnings,
+        "total_bought": total_bought,
         "big_wins": big_wins,
     }
 
@@ -191,8 +224,13 @@ def main():
             "How many monthly draws to simulate? ",
             minimum=1,
         )
+        monthly_buy = _ask_int(
+            "How much to buy each month? (GBP, 0 for none): ",
+            minimum=0,
+            maximum=MAX_HOLDING,
+        )
 
-        simulate(bonds, months)
+        simulate(bonds, months, monthly_buy=monthly_buy)
 
         print("")
         if not _ask_yes_no("Run another simulation? (y/n): "):
