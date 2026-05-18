@@ -17,8 +17,8 @@ PER_PERSON_CAP = 50000
 EXTERNAL_RATE_ANNUAL = 0.08
 EXTERNAL_RATE_MONTHLY = EXTERNAL_RATE_ANNUAL / 12.0
 
+# Threshold for the "big win" notification. Pause length is per-run.
 BIG_WIN_THRESHOLD = 500
-BIG_WIN_PAUSE_SECS = 2
 
 PRIZES = [
     (1_000_000,         2),
@@ -70,7 +70,7 @@ def sample_winners(num_bonds, prob):
 
 
 def simulate(starting_bonds, months, monthly_buy=0, cap=PER_PERSON_CAP,
-             people=1, verbose=True):
+             people=1, big_win_pause=2, verbose=True):
     active = min(starting_bonds, cap)
     pending = deque([0, 0])
     external_pot = 0.0
@@ -90,6 +90,8 @@ def simulate(starting_bonds, months, monthly_buy=0, cap=PER_PERSON_CAP,
             cap, people, PER_PERSON_CAP))
         print("Side-pot rate:       {:.0%} per annum, monthly compounding".format(
             EXTERNAL_RATE_ANNUAL))
+        print("Big-win pause:       {}s (for prizes >= GBP{:,})".format(
+            big_win_pause, BIG_WIN_THRESHOLD))
         print("Simulating {} monthly draws".format(months))
         print("-" * 72)
 
@@ -108,7 +110,8 @@ def simulate(starting_bonds, months, monthly_buy=0, cap=PER_PERSON_CAP,
             if value >= BIG_WIN_THRESHOLD:
                 if verbose:
                     print("  *** Month {}: prize of GBP{:,}! ***".format(month, value))
-                    time.sleep(BIG_WIN_PAUSE_SECS)
+                    if big_win_pause > 0:
+                        time.sleep(big_win_pause)
         total_winnings += month_win
 
         held = active + sum(pending)
@@ -190,6 +193,22 @@ def _ask_int(prompt, minimum=None, maximum=None):
         return value
 
 
+def _ask_choice(prompt, choices):
+    """Ask the user to pick one of the integer values in `choices`."""
+    options = "/".join(str(c) for c in choices)
+    while True:
+        raw = input("{} ({}): ".format(prompt, options)).strip()
+        try:
+            value = int(raw)
+        except ValueError:
+            print("Please enter one of: {}".format(options))
+            continue
+        if value not in choices:
+            print("Please enter one of: {}".format(options))
+            continue
+        return value
+
+
 def _ask_yes_no(prompt):
     while True:
         raw = input(prompt).strip().lower()
@@ -213,11 +232,11 @@ def main():
         if last_params is not None and _ask_yes_no(
             "Repeat the previous scenario with the same settings? (y/n): "
         ):
-            people, bonds, months, monthly_buy = last_params
+            people, bonds, months, monthly_buy, big_win_pause = last_params
             cap = PER_PERSON_CAP * people
             print("Reusing: {} people (cap GBP{:,}), bonds GBP{:,}, "
-                  "{} months, monthly GBP{:,}".format(
-                      people, cap, bonds, months, monthly_buy))
+                  "{} months, monthly GBP{:,}, pause {}s".format(
+                      people, cap, bonds, months, monthly_buy, big_win_pause))
         else:
             people = _ask_int(
                 "How many people own the bonds? (1 or more): ",
@@ -241,9 +260,19 @@ def main():
                 minimum=0,
                 maximum=cap,
             )
-            last_params = (people, bonds, months, monthly_buy)
+            big_win_pause = _ask_choice(
+                "Pause length on a big win (GBP{}+)".format(BIG_WIN_THRESHOLD),
+                [0, 1, 2],
+            )
+            last_params = (people, bonds, months, monthly_buy, big_win_pause)
 
-        simulate(bonds, months, monthly_buy=monthly_buy, cap=cap, people=people)
+        simulate(
+            bonds, months,
+            monthly_buy=monthly_buy,
+            cap=cap,
+            people=people,
+            big_win_pause=big_win_pause,
+        )
 
         print("")
         if not _ask_yes_no("Run another simulation? (y/n): "):
