@@ -17,8 +17,16 @@ PER_PERSON_CAP = 50000
 EXTERNAL_RATE_ANNUAL = 0.08
 EXTERNAL_RATE_MONTHLY = EXTERNAL_RATE_ANNUAL / 12.0
 
-# Threshold for the "big win" notification. Pause length is per-run.
 BIG_WIN_THRESHOLD = 500
+
+# Luck presets -> a 0..100 score. 50 = neutral.
+LUCK_PRESETS = [
+    ("Very Unlucky", 10),
+    ("Unlucky",      30),
+    ("Average",      50),
+    ("Lucky",        70),
+    ("Very Lucky",   90),
+]
 
 PRIZES = [
     (1_000_000,         2),
@@ -36,6 +44,7 @@ PRIZES = [
 
 TOTAL_PRIZES = sum(count for _, count in PRIZES)
 
+# Prizes listed largest first, so small cumulative indexes => big prizes.
 _CUMULATIVE = []
 _running = 0
 for _value, _count in PRIZES:
@@ -43,8 +52,26 @@ for _value, _count in PRIZES:
     _CUMULATIVE.append((_running, _value))
 
 
-def draw_prize_value():
-    r = random.randint(1, TOTAL_PRIZES)
+def luck_multipliers(luck_score):
+    """Turn a 0..100 luck score into a (freq_mult, skew_exp) pair.
+
+    freq_mult scales the per-bond win probability (1.0 = unchanged).
+    skew_exp powers the uniform [0,1) draw used to pick a prize. With
+    prizes listed largest-first, exp > 1 biases samples toward small
+    indices (= bigger prizes), exp < 1 toward small prizes.
+    """
+    # Centered exponential mapping: score 50 -> 1.0, 0 -> 0.5, 100 -> 2.0.
+    factor = 2.0 ** ((luck_score - 50) / 50.0)
+    return factor, factor
+
+
+def draw_prize_value(skew_exp=1.0):
+    u = random.random()
+    if skew_exp != 1.0:
+        u = u ** skew_exp
+    r = int(u * TOTAL_PRIZES) + 1
+    if r > TOTAL_PRIZES:
+        r = TOTAL_PRIZES
     for cum, value in _CUMULATIVE:
         if r <= cum:
             return value
@@ -70,7 +97,7 @@ def sample_winners(num_bonds, prob):
 
 
 def simulate(starting_bonds, months, monthly_buy=0, cap=PER_PERSON_CAP,
-             people=1, big_win_pause=2, verbose=True):
+             people=1, big_win_pause=2, luck_score=50, verbose=True):
     active = min(starting_bonds, cap)
     pending = deque([0, 0])
     external_pot = 0.0
@@ -79,7 +106,9 @@ def simulate(starting_bonds, months, monthly_buy=0, cap=PER_PERSON_CAP,
     total_bought = 0
     big_wins = []
 
-    prob = 1.0 / ODDS_DENOM
+    freq_mult, skew_exp = luck_multipliers(luck_score)
+    base_prob = 1.0 / ODDS_DENOM
+    prob = min(0.99, base_prob * freq_mult)
 
     if verbose:
         print("")
@@ -92,6 +121,9 @@ def simulate(starting_bonds, months, monthly_buy=0, cap=PER_PERSON_CAP,
             EXTERNAL_RATE_ANNUAL))
         print("Big-win pause:       {}s (for prizes >= GBP{:,})".format(
             big_win_pause, BIG_WIN_THRESHOLD))
+        print("Luck score:          {} (freq x{:.2f}, prize skew x{:.2f})".format(
+            luck_score, freq_mult, skew_exp))
+        print("Effective odds:      1 in {:,.0f} per GBP1 per month".format(1.0 / prob))
         print("Simulating {} monthly draws".format(months))
         print("-" * 72)
 
@@ -103,7 +135,7 @@ def simulate(starting_bonds, months, monthly_buy=0, cap=PER_PERSON_CAP,
         winners = sample_winners(active, prob)
         month_win = 0
         for _ in range(winners):
-            value = draw_prize_value()
+            value = draw_prize_value(skew_exp)
             month_win += value
             if value >= 1000:
                 big_wins.append((month, value))
@@ -194,7 +226,6 @@ def _ask_int(prompt, minimum=None, maximum=None):
 
 
 def _ask_choice(prompt, choices):
-    """Ask the user to pick one of the integer values in `choices`."""
     options = "/".join(str(c) for c in choices)
     while True:
         raw = input("{} ({}): ".format(prompt, options)).strip()
@@ -219,10 +250,20 @@ def _ask_yes_no(prompt):
         print("Please answer yes or no.")
 
 
+def _ask_luck():
+    print("Luck level:")
+    for i, (name, score) in enumerate(LUCK_PRESETS, start=1):
+        print("  {}) {} (score {})".format(i, name, score))
+    choice = _ask_choice("Pick a luck level",
+                         list(range(1, len(LUCK_PRESETS) + 1)))
+    name, score = LUCK_PRESETS[choice - 1]
+    return name, score
+
+
 def main():
     print("UK Premium Bond Draw Simulator")
     print("==============================")
-    print("Odds: 1 in {:,} per GBP1 bond per month".format(ODDS_DENOM))
+    print("Odds: 1 in {:,} per GBP1 bond per month (at neutral luck)".format(ODDS_DENOM))
     print("Per-person holding cap: GBP{:,}".format(PER_PERSON_CAP))
     print("Side investment for prizes over cap: {:.0%} per annum".format(
         EXTERNAL_RATE_ANNUAL))
@@ -232,11 +273,13 @@ def main():
         if last_params is not None and _ask_yes_no(
             "Repeat the previous scenario with the same settings? (y/n): "
         ):
-            people, bonds, months, monthly_buy, big_win_pause = last_params
+            (people, bonds, months, monthly_buy,
+             big_win_pause, luck_name, luck_score) = last_params
             cap = PER_PERSON_CAP * people
             print("Reusing: {} people (cap GBP{:,}), bonds GBP{:,}, "
-                  "{} months, monthly GBP{:,}, pause {}s".format(
-                      people, cap, bonds, months, monthly_buy, big_win_pause))
+                  "{} months, monthly GBP{:,}, pause {}s, luck {}".format(
+                      people, cap, bonds, months, monthly_buy,
+                      big_win_pause, luck_name))
         else:
             people = _ask_int(
                 "How many people own the bonds? (1 or more): ",
@@ -264,7 +307,9 @@ def main():
                 "Pause length on a big win (GBP{}+)".format(BIG_WIN_THRESHOLD),
                 [0, 1, 2],
             )
-            last_params = (people, bonds, months, monthly_buy, big_win_pause)
+            luck_name, luck_score = _ask_luck()
+            last_params = (people, bonds, months, monthly_buy,
+                           big_win_pause, luck_name, luck_score)
 
         simulate(
             bonds, months,
@@ -272,6 +317,7 @@ def main():
             cap=cap,
             people=people,
             big_win_pause=big_win_pause,
+            luck_score=luck_score,
         )
 
         print("")
