@@ -10,6 +10,7 @@ the GBP50,000 holding cap; anything above the cap is treated as
 
 import random
 import math
+import time
 from collections import deque
 
 # --- UK Premium Bond parameters -------------------------------------------
@@ -17,8 +18,16 @@ from collections import deque
 # Odds: 1 in 22,000 per GBP1 bond per monthly draw.
 ODDS_DENOM = 22000
 
-# Maximum NS&I Premium Bond holding.
-MAX_HOLDING = 50000
+# Combined holding cap (two joint holders, GBP50,000 each).
+MAX_HOLDING = 100000
+
+# Side-investment rate for prizes that exceed the bond cap.
+EXTERNAL_RATE_ANNUAL = 0.08
+EXTERNAL_RATE_MONTHLY = EXTERNAL_RATE_ANNUAL / 12.0
+
+# Pause for this many seconds whenever a single prize of >= GBP500 hits.
+BIG_WIN_THRESHOLD = 500
+BIG_WIN_PAUSE_SECS = 2
 
 # Approximate prize structure (value in GBP, number of prizes).
 # Based on a representative recent NS&I monthly draw (May 2025).
@@ -90,7 +99,8 @@ def simulate(starting_bonds, months, monthly_buy=0, verbose=True):
     # (eligible next month), pending[1] = bought this month.
     active = min(starting_bonds, MAX_HOLDING)
     pending = deque([0, 0])
-    overflow = 0
+    external_pot = 0.0           # value of side investment (compounds monthly)
+    external_principal = 0       # cumulative GBP redirected to side pot
     total_winnings = 0
     total_bought = 0
     big_wins = []
@@ -101,15 +111,21 @@ def simulate(starting_bonds, months, monthly_buy=0, verbose=True):
         print("")
         print("Starting holding:    GBP{:,}".format(active))
         print("Monthly purchase:    GBP{:,}".format(monthly_buy))
+        print("Holding cap:         GBP{:,} (joint)".format(MAX_HOLDING))
+        print("Side-pot rate:       {:.0%} per annum, monthly compounding".format(
+            EXTERNAL_RATE_ANNUAL))
         print("Simulating {} monthly draws".format(months))
-        print("-" * 70)
+        print("-" * 72)
 
     for month in range(1, months + 1):
         # 1. Graduate the oldest pending tranche into the active pool.
-        graduating = pending.popleft()
-        active += graduating
+        active += pending.popleft()
 
-        # 2. Run this month's draw on the active bonds.
+        # 2. Apply this month's growth to the existing side-pot balance
+        #    BEFORE adding any new contributions for this month.
+        external_pot *= (1.0 + EXTERNAL_RATE_MONTHLY)
+
+        # 3. Run this month's draw on the active bonds.
         winners = sample_winners(active, prob)
         month_win = 0
         for _ in range(winners):
@@ -117,10 +133,14 @@ def simulate(starting_bonds, months, monthly_buy=0, verbose=True):
             month_win += value
             if value >= 1000:
                 big_wins.append((month, value))
+            if value >= BIG_WIN_THRESHOLD:
+                if verbose:
+                    print("  *** Month {}: prize of GBP{:,}! ***".format(month, value))
+                    time.sleep(BIG_WIN_PAUSE_SECS)
         total_winnings += month_win
 
-        # 3. Reinvest winnings straight into active (existing behaviour),
-        #    constrained by the GBP50,000 cap on total bond holding.
+        # 4. Reinvest winnings into active up to the cap; anything that
+        #    doesn't fit goes into the external 8%/yr side pot.
         held = active + sum(pending)
         room = MAX_HOLDING - held
         if month_win <= room:
@@ -128,37 +148,49 @@ def simulate(starting_bonds, months, monthly_buy=0, verbose=True):
         else:
             if room > 0:
                 active += room
-            overflow += month_win - max(0, room)
+            spilled = month_win - max(0, room)
+            external_pot += spilled
+            external_principal += spilled
 
-        # 4. Buy this month's contribution into the pending pipeline,
-        #    also constrained by the cap. Anything that can't fit goes
-        #    "elsewhere".
+        # 5. Buy this month's contribution into the pending pipeline,
+        #    also subject to the cap; the rest goes to the side pot.
         held = active + sum(pending)
         room = max(0, MAX_HOLDING - held)
         bought = min(monthly_buy, room)
-        overflow += monthly_buy - bought
+        unbuilt = monthly_buy - bought
+        if unbuilt > 0:
+            external_pot += unbuilt
+            external_principal += unbuilt
         total_bought += bought
         pending.append(bought)
 
         if verbose and (month_win > 0 or bought > 0):
             print(
                 "M{:>3}: won GBP{:>7,}  bought GBP{:>5,}  "
-                "active GBP{:>6,}  pending GBP{:>5,}  "
-                "else GBP{:,}".format(
-                    month, month_win, bought, active, sum(pending), overflow
+                "active GBP{:>7,}  pending GBP{:>5,}  "
+                "side GBP{:>9,.0f}".format(
+                    month, month_win, bought, active, sum(pending), external_pot
                 )
             )
 
-    final_total = active + sum(pending)
+    final_total_bonds = active + sum(pending)
+    external_growth = external_pot - external_principal
+    grand_total = final_total_bonds + external_pot
+
     if verbose:
-        print("-" * 70)
-        print("Final active bonds:         GBP{:,}".format(active))
-        print("Pending (not yet eligible): GBP{:,}".format(sum(pending)))
-        print("Total bond holding:         GBP{:,}".format(final_total))
-        print("Total bought from monthly:  GBP{:,}".format(total_bought))
-        print("Invested elsewhere:         GBP{:,}".format(overflow))
-        print("Total winnings:             GBP{:,}".format(total_winnings))
-        print("Grand total (bonds + else): GBP{:,}".format(final_total + overflow))
+        print("-" * 72)
+        print("Final active bonds:           GBP{:,}".format(active))
+        print("Pending (not yet eligible):   GBP{:,}".format(sum(pending)))
+        print("Total bond holding:           GBP{:,}".format(final_total_bonds))
+        print("Total bought from monthly:    GBP{:,}".format(total_bought))
+        print("Total winnings:               GBP{:,}".format(total_winnings))
+        print("")
+        print("Side investment ({:.0%}/yr):".format(EXTERNAL_RATE_ANNUAL))
+        print("  Principal added:            GBP{:,}".format(external_principal))
+        print("  Cumulative growth:          GBP{:,.2f}".format(external_growth))
+        print("  Current value:              GBP{:,.2f}".format(external_pot))
+        print("")
+        print("Grand total (bonds + side):   GBP{:,.2f}".format(grand_total))
         if big_wins:
             print("")
             print("Notable wins (GBP1,000+):")
@@ -171,11 +203,14 @@ def simulate(starting_bonds, months, monthly_buy=0, verbose=True):
     return {
         "final_active": active,
         "final_pending": sum(pending),
-        "final_total_bonds": final_total,
-        "overflow": overflow,
+        "final_total_bonds": final_total_bonds,
+        "external_principal": external_principal,
+        "external_growth": external_growth,
+        "external_value": external_pot,
         "total_winnings": total_winnings,
         "total_bought": total_bought,
         "big_wins": big_wins,
+        "grand_total": grand_total,
     }
 
 
@@ -209,26 +244,37 @@ def _ask_yes_no(prompt):
 
 
 def main():
-    print("UK Premium Bond Draw Simulator")
-    print("==============================")
+    print("UK Premium Bond Draw Simulator (joint holding)")
+    print("==============================================")
     print("Odds: 1 in {:,} per GBP1 bond per month".format(ODDS_DENOM))
-    print("Holding cap: GBP{:,}".format(MAX_HOLDING))
+    print("Joint holding cap: GBP{:,} (two holders)".format(MAX_HOLDING))
+    print("Side investment for prizes over cap: {:.0%} per annum".format(
+        EXTERNAL_RATE_ANNUAL))
 
+    last_params = None
     while True:
-        bonds = _ask_int(
-            "How many bonds do you hold? (GBP1 each, 25-50000): ",
-            minimum=25,
-            maximum=MAX_HOLDING,
-        )
-        months = _ask_int(
-            "How many monthly draws to simulate? ",
-            minimum=1,
-        )
-        monthly_buy = _ask_int(
-            "How much to buy each month? (GBP, 0 for none): ",
-            minimum=0,
-            maximum=MAX_HOLDING,
-        )
+        if last_params is not None and _ask_yes_no(
+            "Repeat the previous scenario with the same settings? (y/n): "
+        ):
+            bonds, months, monthly_buy = last_params
+            print("Reusing: bonds GBP{:,}, {} months, monthly GBP{:,}".format(
+                bonds, months, monthly_buy))
+        else:
+            bonds = _ask_int(
+                "How many bonds do you hold? (GBP1 each, 25-{}): ".format(MAX_HOLDING),
+                minimum=25,
+                maximum=MAX_HOLDING,
+            )
+            months = _ask_int(
+                "How many monthly draws to simulate? ",
+                minimum=1,
+            )
+            monthly_buy = _ask_int(
+                "How much to buy each month? (GBP, 0 for none): ",
+                minimum=0,
+                maximum=MAX_HOLDING,
+            )
+            last_params = (bonds, months, monthly_buy)
 
         simulate(bonds, months, monthly_buy=monthly_buy)
 
