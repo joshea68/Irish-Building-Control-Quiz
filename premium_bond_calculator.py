@@ -125,6 +125,8 @@ def simulate(starting_bonds, months, monthly_buy=0, verbose=True):
         #    BEFORE adding any new contributions for this month.
         external_pot *= (1.0 + EXTERNAL_RATE_MONTHLY)
 
+        month_to_side = 0  # GBP added to side pot this month
+
         # 3. Run this month's draw on the active bonds.
         winners = sample_winners(active, prob)
         month_win = 0
@@ -151,9 +153,12 @@ def simulate(starting_bonds, months, monthly_buy=0, verbose=True):
             spilled = month_win - max(0, room)
             external_pot += spilled
             external_principal += spilled
+            month_to_side += spilled
 
-        # 5. Buy this month's contribution into the pending pipeline,
-        #    also subject to the cap; the rest goes to the side pot.
+        # 5. Try to buy this month's monthly contribution into the
+        #    pending pipeline. If the cap is full (or partly so), the
+        #    leftover keeps flowing -- it just goes into the side pot
+        #    instead.
         held = active + sum(pending)
         room = max(0, MAX_HOLDING - held)
         bought = min(monthly_buy, room)
@@ -161,15 +166,18 @@ def simulate(starting_bonds, months, monthly_buy=0, verbose=True):
         if unbuilt > 0:
             external_pot += unbuilt
             external_principal += unbuilt
+            month_to_side += unbuilt
         total_bought += bought
         pending.append(bought)
 
-        if verbose and (month_win > 0 or bought > 0):
+        if verbose and (month_win > 0 or bought > 0 or month_to_side > 0):
             print(
                 "M{:>3}: won GBP{:>7,}  bought GBP{:>5,}  "
+                "to side GBP{:>5,}  "
                 "active GBP{:>7,}  pending GBP{:>5,}  "
-                "side GBP{:>9,.0f}".format(
-                    month, month_win, bought, active, sum(pending), external_pot
+                "side GBP{:>10,.0f}".format(
+                    month, month_win, bought, month_to_side,
+                    active, sum(pending), external_pot,
                 )
             )
 
